@@ -1,0 +1,24 @@
+@import "tailwindcss";
+@import "@fontsource/atkinson-hyperlegible/400.css";
+@import "@fontsource/atkinson-hyperlegible/700.css";
+
+@theme {
+  --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --color-pino: #14302b;
+  --color-papel: #f4f7f3;
+  --color-flor: #e8b931;
+  --color-rio: #2a7f78;
+  --color-alerta: #b3261e;
+  --color-tenue: #4b5f59;
+}
+
+body {
+  background: var(--color-papel);
+  color: var(--color-pino);
+  font-size: 1.0625rem;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-rio);
+  outline-offset: 2px;
+}
