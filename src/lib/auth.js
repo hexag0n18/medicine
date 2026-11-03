@@ -1,3 +1,5 @@
+import { parseSession } from './session';
+
 const COGNITO = import.meta.env.PUBLIC_COGNITO_URL;
 const CLIENT = import.meta.env.PUBLIC_CLIENT_ID;
 const CLAVE = "token";
@@ -27,23 +29,22 @@ export async function login(usuario, clave) {
     );
   }
   // sessionStorage: se borra al cerrar la pestaña. En produccion usar Hosted UI con PKCE y cookie HttpOnly
+  if (!datos.AuthenticationResult?.IdToken) throw new Error("Tu cuenta requiere completar un paso adicional. Comunícate con tu centro de salud.");
+  if (!parseSession(datos.AuthenticationResult.IdToken)) {
+    throw new Error('La cuenta no tiene un perfil de paciente o médico válido. Comunícate con tu centro de salud.');
+  }
   sessionStorage.setItem(CLAVE, datos.AuthenticationResult.IdToken);
 }
 
-export const token = () => sessionStorage.getItem(CLAVE);
+export const token = () => typeof sessionStorage === "undefined" ? null : sessionStorage.getItem(CLAVE);
 
 // Datos del usuario leidos del token (el servidor vuelve a validarlo en cada llamada)
 export function sesion() {
   const t = token();
   if (!t) return null;
-  try {
-    const p = JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    if (p.exp * 1000 < Date.now()) return null;
-    const grupos = [].concat(p["cognito:groups"] ?? []);
-    return { id: p.sub, usuario: p["cognito:username"], rol: grupos.includes("medico") ? "medico" : "paciente" };
-  } catch {
-    return null;
-  }
+  const current = parseSession(t);
+  if (!current) sessionStorage.removeItem(CLAVE);
+  return current;
 }
 
 export function salir() {

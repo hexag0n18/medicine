@@ -1,8 +1,14 @@
-import { salir, token } from "./auth";
+import { salir, sesion, token } from "./auth";
 
-const BASE = import.meta.env.PUBLIC_API_URL;
+// En desarrollo Vite reenvía al mismo backend AWS. No simula respuestas ni
+// modifica el JWT; evita depender de los orígenes CORS de producción.
+const BASE = import.meta.env.DEV ? '/api' : import.meta.env.PUBLIC_API_URL;
 
 export async function api(ruta, { metodo = "GET", cuerpo } = {}) {
+  if (!sesion()) {
+    salir();
+    throw new Error('Tu sesión terminó. Ingresa de nuevo.');
+  }
   let r;
   try {
     r = await fetch(BASE + ruta, {
