@@ -10,7 +10,7 @@ export function parseSession(token, now = Date.now()) {
     if (typeof claims.sub !== 'string' || !claims.sub) return null;
     if (typeof claims['cognito:username'] !== 'string' || !claims['cognito:username']) return null;
     const groups = [].concat(claims['cognito:groups'] ?? []);
-    const role = groups.includes('medico') ? 'medico' : groups.includes('paciente') ? 'paciente' : null;
+    const role = groups.includes('admin') ? 'admin' : groups.includes('medico') ? 'medico' : groups.includes('paciente') ? 'paciente' : null;
     if (!role) return null;
     return { id: claims.sub, usuario: claims['cognito:username'], rol: role };
   } catch {

@@ -12,13 +12,16 @@ test('interpreta identidad UTF-8 y rol del paciente', () => {
 test('reconoce el grupo médico', () => {
   assert.equal(parseSession(token({ ...claims, 'cognito:groups': ['medico'] }), now).rol, 'medico');
 });
+test('reconoce el grupo admin', () => {
+  assert.equal(parseSession(token({ ...claims, 'cognito:groups': ['admin'] }), now).rol, 'admin');
+});
 test('rechaza expiración alcanzada, pasada o ausente', () => {
   for (const exp of [now / 1000, now / 1000 - 1, undefined, '9999999999']) {
     assert.equal(parseSession(token({ ...claims, exp }), now), null);
   }
 });
 test('no concede rol paciente a grupos desconocidos o ausentes', () => {
-  for (const groups of [undefined, [], ['administrador']]) {
+  for (const groups of [undefined, [], ['superusuario']]) {
     assert.equal(parseSession(token({ ...claims, 'cognito:groups': groups }), now), null);
   }
 });

@@ -36,7 +36,7 @@ Medirural ofrece un espacio de atención con tres módulos: **citas**, **histori
 
 La aplicación funciona conectada al backend: consultar o guardar información requiere conexión. El aviso de desconexión informa al usuario, pero no proporciona almacenamiento de operaciones pendientes ni sincronización offline.
 
-La implementación actual no incluye videollamadas, autorregistro, recuperación de contraseña desde la interfaz, cancelación o reprogramación de citas, ni eliminación de notas o documentos. El envío de notificaciones por correo o SMS pertenece a los servicios del backend y no se administra desde este frontend.
+La interfaz incluye autorregistro de pacientes (con confirmación por correo), recuperación de contraseña, cancelación y reprogramación de citas, eliminación de notas (solo su autor) y documentos, y un panel de administración de usuarios para el rol `admin`. No incluye videollamadas. El envío de notificaciones por correo o SMS pertenece a los servicios del backend y no se administra desde este frontend.
 
 ## Perfiles y funcionalidades
 
