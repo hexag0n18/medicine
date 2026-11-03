@@ -1,61 +1,25 @@
-import { useCallback, useEffect, useState } from "react";
-
-export const campo =
-  "block w-full min-h-12 rounded-lg border-2 border-pino/30 bg-white px-3 py-2 text-pino placeholder:text-tenue/70 focus:border-rio";
-
-export function Boton({ secundario, className = "", ...props }) {
-  const color = secundario ? "border-2 border-pino bg-transparent text-pino" : "bg-flor text-pino";
-  return (
-    <button
-      className={`min-h-12 rounded-lg px-5 font-bold disabled:opacity-50 ${color} ${className}`}
-      {...props}
-    />
-  );
-}
-
-export function Campo({ etiqueta, children }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block font-bold">{etiqueta}</span>
-      {children}
-    </label>
-  );
-}
-
-export function Aviso({ children }) {
-  if (!children) return null;
-  return (
-    <p role="alert" className="rounded-lg border-2 border-alerta bg-white px-3 py-2 font-bold text-alerta">
-      {children}
-    </p>
-  );
-}
-
-// Carga datos al montar y cuando cambia `clave`; devuelve { datos, error, cargando, recargar }
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Icon from './Icon';
+export const campo = 'field-input';
+export function Boton({ secundario, className = '', ...props }) { return <button className={`button ${secundario ? 'button-secondary' : 'button-primary'} ${className}`} {...props} />; }
+export function Campo({ etiqueta, children }) { return <label className="field"><span>{etiqueta}</span>{children}</label>; }
+export function Aviso({ children, exito = false }) { if (!children) return null; return <p role={exito ? 'status' : 'alert'} className={`notice ${exito ? 'success' : 'error'}`}>{children}</p>; }
+export function Empty({ icon = 'calendar', title, children }) { return <div className="empty-state"><span><Icon name={icon} size={28} /></span><h3>{title}</h3><p>{children}</p></div>; }
+export function Loading() { return <div className="loading" role="status"><span className="spinner" /> Cargando tu información…</div>; }
 export function useCarga(cargar, clave) {
-  const [estado, setEstado] = useState({ datos: null, error: "", cargando: true });
+  const loader = useRef(cargar); loader.current = cargar;
+  const sequence = useRef(0);
+  const [estado, setEstado] = useState({ datos: null, error: '', cargando: true });
   const recargar = useCallback(() => {
-    setEstado((e) => ({ ...e, cargando: true, error: "" }));
-    cargar().then(
-      (datos) => setEstado({ datos, error: "", cargando: false }),
-      (err) => setEstado({ datos: null, error: err.message, cargando: false })
-    );
+    const current = ++sequence.current;
+    setEstado({ datos: null, cargando: true, error: '' });
+    Promise.resolve().then(() => loader.current()).then(datos => { if (current === sequence.current) setEstado({ datos, error: '', cargando: false }); }, err => { if (current === sequence.current) setEstado({ datos: null, error: err.message, cargando: false }); });
   }, [clave]);
-  useEffect(recargar, [recargar]);
+  useEffect(() => { recargar(); return () => { sequence.current++; }; }, [recargar]);
   return { ...estado, recargar };
 }
-
-// La hoja de calendario: el motivo visual de la app
-export function Fecha({ fecha, className = "" }) {
-  const d = new Date(fecha);
-  const valida = !Number.isNaN(d.getTime());
-  return (
-    <div className={`flex size-16 shrink-0 flex-col items-center justify-center rounded-lg bg-flor text-pino ${className}`} aria-hidden="true">
-      <span className="text-2xl font-bold leading-none">{valida ? d.getDate() : "?"}</span>
-      <span className="text-sm">{valida ? d.toLocaleDateString("es", { month: "short" }).replace(".", "") : ""}</span>
-    </div>
-  );
+export function Fecha({ fecha, className = '' }) {
+  const d = new Date(fecha); const valida = !Number.isNaN(d.getTime());
+  return <div className={`date-tile ${className}`} aria-hidden="true"><strong>{valida ? d.getDate() : '—'}</strong><span>{valida ? d.toLocaleDateString('es', { month: 'short' }).replace('.', '') : ''}</span></div>;
 }
-
-export const hora = (fecha) =>
-  new Date(fecha).toLocaleString("es", { weekday: "long", hour: "2-digit", minute: "2-digit" });
+export const hora = fecha => new Date(fecha).toLocaleString('es-PE', { weekday: 'long', hour: '2-digit', minute: '2-digit' });

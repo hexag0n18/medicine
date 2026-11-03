@@ -1,60 +1,17 @@
-import { useState } from "react";
-import { api } from "../lib/api";
-import { Aviso, Boton, Campo, campo, useCarga } from "./ui";
-
+import { useState } from 'react';
+import { api } from '../lib/api';
+import { Aviso, Boton, Campo, Empty, Loading, campo, useCarga } from './ui';
+import Icon from './Icon';
 export default function Historial({ sesion, pacienteId }) {
-  const { datos, error, cargando, recargar } = useCarga(
-    () => (pacienteId ? api(`/historiales/${pacienteId}`) : Promise.resolve([])),
-    pacienteId
-  );
-  const [errorNota, setErrorNota] = useState("");
-
-  if (!pacienteId) {
-    return <p className="text-tenue">Elige “Ver historial” en una cita para abrir el historial de ese paciente.</p>;
-  }
-
+  const { datos, error, cargando, recargar } = useCarga(() => pacienteId ? api(`/historiales/${encodeURIComponent(pacienteId)}`) : Promise.resolve([]), pacienteId);
+  const [errorNota, setErrorNota] = useState(''); const [guardando, setGuardando] = useState(false); const [exito, setExito] = useState('');
+  if (!pacienteId) return <section className="card"><Empty icon="user" title="Selecciona un paciente">En tu agenda, elige «Ver historial» en una cita para consultar sus notas clínicas.</Empty></section>;
   async function guardar(e) {
-    e.preventDefault();
-    const formulario = e.currentTarget;
-    setErrorNota("");
-    try {
-      await api(`/historiales/${pacienteId}`, { metodo: "POST", cuerpo: { nota: new FormData(formulario).get("nota") } });
-      formulario.reset();
-      recargar();
-    } catch (err) {
-      setErrorNota(err.message);
-    }
+    e.preventDefault(); const formulario = e.currentTarget; const nota = new FormData(formulario).get('nota').trim(); setErrorNota(''); setExito('');
+    if (!nota) { setErrorNota('Escribe una nota antes de guardarla.'); return; } setGuardando(true);
+    try { await api(`/historiales/${encodeURIComponent(pacienteId)}`, { metodo: 'POST', cuerpo: { nota } }); formulario.reset(); setExito('Nota clínica guardada correctamente.'); recargar(); } catch (err) { setErrorNota(err.message); } finally { setGuardando(false); }
   }
-
-  return (
-    <div className="space-y-8">
-      {sesion.rol === "medico" && (
-        <form onSubmit={guardar} className="space-y-4 border-b-2 border-pino/20 pb-8">
-          <h2 className="text-xl font-bold">Agregar una nota</h2>
-          <Campo etiqueta="Nota de la consulta">
-            <textarea name="nota" rows="4" required maxLength="5000" className={campo} />
-          </Campo>
-          <Aviso>{errorNota}</Aviso>
-          <Boton type="submit">Guardar nota</Boton>
-        </form>
-      )}
-      <section>
-        <h2 className="mb-4 text-xl font-bold">Historial clínico</h2>
-        <Aviso>{error}</Aviso>
-        {cargando && <p className="text-tenue">Cargando…</p>}
-        {datos?.length === 0 && <p className="text-tenue">Todavía no hay notas en este historial.</p>}
-        <ol className="divide-y-2 divide-pino/15">
-          {datos?.map((n) => (
-            <li key={n.fecha} className="py-4">
-              <p className="font-bold">
-                {new Date(n.fecha).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" })}
-              </p>
-              <p className="text-tenue">Atendió {n.medico}</p>
-              <p className="mt-2 whitespace-pre-wrap">{n.nota}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-    </div>
-  );
+  return <div className="records-layout"><section className="card"><div className="card-heading"><span className="icon-box"><Icon name="history" /></span><div><h2>Historial de consultas</h2><p>El registro de tus atenciones de salud.</p></div><button className="text-button" onClick={recargar} disabled={cargando}>Actualizar</button></div><Aviso>{error}</Aviso>{cargando ? <Loading /> : !error && (!datos?.length ? <Empty icon="history" title="Una historia por comenzar">Las notas registradas por tu médico aparecerán aquí después de tus consultas.</Empty> : <ol className="timeline">{[...datos].sort((a,b) => new Date(b.fecha)-new Date(a.fecha)).map((n,i) => <li key={`${n.fecha}-${i}`}><span className="timeline-dot" /><span className="eyebrow">{new Date(n.fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}</span><h3>Nota de consulta</h3><span className="record-doctor"><Icon name="user" size={16} /> Registrada por {n.medico}</span><p className="clinical-note">{n.nota}</p></li>)}</ol>)}</section>
+    {sesion.rol === 'medico' ? <form onSubmit={guardar} className="card note-form"><div className="card-heading"><span className="icon-box"><Icon name="plus" /></span><div><h2>Nueva nota clínica</h2><p>Registra la atención de este paciente.</p></div></div><Campo etiqueta="Nota de la consulta"><textarea name="nota" rows="8" required maxLength="5000" placeholder="Escribe los detalles de la atención…" className={campo} /><small>Máximo 5000 caracteres. Revisa la nota antes de guardarla.</small></Campo><Aviso>{errorNota}</Aviso><Aviso exito>{exito}</Aviso><Boton type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar nota'}<Icon name="check" size={18} /></Boton></form> : <aside className="information-card"><Icon name="shield" size={30} /><h3>Tu historia importa</h3><p>Este espacio reúne las notas de tus consultas. Si tienes dudas sobre un registro, conversa con tu médico.</p></aside>}
+  </div>;
 }
